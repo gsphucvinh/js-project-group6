@@ -99,7 +99,6 @@ const loadAppPage = async (pageModule, requiresAuth = true, data = null, activeP
     router.updatePageLinks();
 };
 
-// 3. Đăng ký các Route kèm chỉ định rõ Tab nào sẽ sáng đèn (Tham số thứ 4)
 router
     .on("/", () => loadAppPage(dashboardPage, true, null, "/dashboard"))
     .on("/login", () => loadAppPage(loginPage, false))
