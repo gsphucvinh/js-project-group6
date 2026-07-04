@@ -80,8 +80,10 @@ const render = () => {
 
 const init = async () => {
     try {
-        const orders = await orderService.getAll();
-        const products = await productService.getAll();
+        const [orders, products] = await Promise.all([
+            orderService.getAll(),
+            productService.getAll()
+        ]);
         const revenue = orders.reduce((sum, order) => {
             return sum + order.amount * order.product.price;
         }, 0);

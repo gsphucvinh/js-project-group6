@@ -1,6 +1,7 @@
+// src/views/orders.js
 import orderService from '../services/orderService.js';
 import productService from '../services/productService.js';
-import { getAllCustomers } from '../api/customer-api.js';
+import customerService from '../services/customerService.js';
 import { formatCurrency, normalizeDate, removeVietnameseTones } from '../utils/helpers.js';
 
 const STATUS_TEXT = {
@@ -31,9 +32,16 @@ const OrdersView = {
         return `
             <header>
                 <div class="search-bar">
-                    <input type="text" id="orderSearchInput" placeholder="Tìm mã đơn, tên khách hàng...">
+                    <input type="text" id="orderSearchInput" placeholder="Tìm mã đơn, tên khách hàng, SĐT...">
                 </div>
-                <button class="btn-export"><i class="fas fa-download"></i> Xuất Excel</button>
+                <div style="display:flex;gap:10px;">
+                    <button class="btn-add" id="btnOpenCreateOrder">
+                        <i class="fas fa-plus"></i> Tạo đơn hàng
+                    </button>
+                    <button class="btn-export" id="btnExportExcel" style="background: var(--success);">
+                        <i class="fas fa-download"></i> Xuất Excel
+                    </button>
+                </div>
             </header>
 
             <section class="stats">
@@ -51,21 +59,81 @@ const OrdersView = {
                         <button class="tab" data-tab="shipping">Đang giao</button>
                         <button class="tab" data-tab="completed">Đã xong</button>
                     </div>
-                    <div>
-                        <input type="date" id="orderDateFilter" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px; outline:none;">
+                    <div class="date-filter">
+                        <input type="date" id="orderDateFilter">
                     </div>
                 </div>
                 <div class="table-wrapper">
                     <table>
                         <thead>
-                            <tr><th>Mã đơn</th><th>Khách hàng</th><th>Sản phẩm</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thao tác</th></tr>
+                            <tr>
+                                <th>Mã đơn</th><th>Khách hàng</th><th>Sản phẩm</th>
+                                <th>Tổng tiền</th><th>Trạng thái</th><th>Thao tác</th>
+                            </tr>
                         </thead>
                         <tbody id="orderTableBody">
-                            <tr><td colspan="6" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                            <tr><td colspan="6" class="empty-state">
+                                <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu đơn hàng...
+                            </td></tr>
                         </tbody>
                     </table>
                 </div>
             </section>
+
+            <div id="detailsModal" class="modal">
+                <div class="modal-content">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:20px;">
+                        <h3 style="margin:0; font-size: 1.2rem; color: var(--dark-color);">Chi tiết đơn hàng <span id="detail-order-id" style="color: var(--primary-color);"></span></h3>
+                        <button id="btnCloseDetails" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted);">&times;</button>
+                    </div>
+                    <div style="line-height:1.8; font-size:0.95rem; margin-bottom:20px; color: var(--dark-color);">
+                        <p><strong>Khách hàng:</strong> <span id="detail-customer-name"></span></p>
+                        <p><strong>Số điện thoại:</strong> <span id="detail-customer-phone"></span></p>
+                        <p><strong>Email:</strong> <span id="detail-customer-email"></span></p>
+                        <p style="margin-top:10px; border-top:1px dashed var(--border); padding-top:10px;">
+                            <strong>Sản phẩm:</strong> <span id="detail-product-name"></span></p>
+                        <p><strong>Số lượng:</strong> <span id="detail-product-qty"></span></p>
+                        <p><strong>Ngày tạo:</strong> <span id="detail-order-date"></span></p>
+                        <p><strong>Trạng thái:</strong> <span id="detail-order-status"></span></p>
+                        <h4 style="margin-top:20px; border-top:1px solid var(--border); padding-top:15px; text-align:right;">
+                            Tổng tiền: <span id="detail-total-amount" style="color:var(--danger); font-size:1.2rem;"></span>
+                        </h4>
+                    </div>
+                    <div class="form-actions" style="border:none; padding:0; margin:0;">
+                        <button class="btn-cancel" id="btnCloseDetailsBtn">Đóng</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="createOrderModal" class="modal">
+                <div class="modal-content">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:20px;">
+                        <h3 style="margin:0; font-size: 1.2rem; color: var(--dark-color);">Tạo đơn hàng mới</h3>
+                        <button id="btnCloseCreateOrder" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted);">&times;</button>
+                    </div>
+                    <form id="createOrderForm">
+                        <div class="form-group">
+                            <label>Khách hàng</label>
+                            <select id="create-customer-select" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Sản phẩm</label>
+                            <select id="create-product-select" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Số lượng</label>
+                            <input type="number" id="create-amount-input" min="1" value="1" required>
+                        </div>
+                        <div style="text-align:right; font-size:1.1rem; font-weight:bold; margin-bottom:10px; color: var(--dark-color);">
+                            Tổng tiền tạm tính: <span id="create-total-preview" style="color:var(--danger);">0đ</span>
+                        </div>
+                        <div class="form-actions" style="margin-top:10px;">
+                            <button type="button" class="btn-cancel" id="btnCancelCreateOrder">Hủy</button>
+                            <button type="submit" class="btn-save"><i class="fas fa-save"></i> Lưu đơn hàng</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         `;
     },
 
@@ -76,7 +144,6 @@ const OrdersView = {
 
         window.OrdersView = this;
 
-        // Tab filters
         document.querySelectorAll('.tabs .tab').forEach((tab, i) => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
@@ -86,7 +153,6 @@ const OrdersView = {
             });
         });
 
-        // Search & Date filters
         document.getElementById('orderSearchInput')?.addEventListener('input', e => {
             this.searchQuery = e.target.value;
             this.filterAndRender();
@@ -97,7 +163,6 @@ const OrdersView = {
             this.filterAndRender();
         });
 
-        // Create modal events
         document.getElementById('btnOpenCreateOrder')?.addEventListener('click', () => this.openCreateModal());
         document.getElementById('btnCloseCreateOrder')?.addEventListener('click', () => this.closeCreateModal());
         document.getElementById('btnCancelCreateOrder')?.addEventListener('click', () => this.closeCreateModal());
@@ -106,7 +171,6 @@ const OrdersView = {
         document.getElementById('create-product-select')?.addEventListener('change', () => this.updateCreateTotal());
         document.getElementById('create-amount-input')?.addEventListener('input', () => this.updateCreateTotal());
 
-        // Details modal events
         document.getElementById('btnCloseDetails')?.addEventListener('click', () => this.closeDetailsModal());
         document.getElementById('btnCloseDetailsBtn')?.addEventListener('click', () => this.closeDetailsModal());
 
@@ -117,7 +181,7 @@ const OrdersView = {
         try {
             const [orders, customers, products] = await Promise.all([
                 orderService.getAll(),
-                getAllCustomers(),
+                customerService.getAll(),
                 productService.getAll()
             ]);
             this.orders = orders || [];
@@ -131,7 +195,7 @@ const OrdersView = {
             const tbody = document.getElementById('orderTableBody');
             if (tbody) {
                 tbody.innerHTML = `
-                    <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--danger);font-weight:bold;">
+                    <tr><td colspan="6" class="empty-state" style="color:var(--danger);">
                         <i class="fas fa-exclamation-triangle"></i> Không thể tải dữ liệu đơn hàng!
                     </td></tr>`;
             }
@@ -180,7 +244,7 @@ const OrdersView = {
 
         tbody.innerHTML = '';
         if (list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#999;padding:25px;">Không tìm thấy đơn hàng nào</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Không tìm thấy đơn hàng nào</td></tr>`;
             return;
         }
 
@@ -191,26 +255,26 @@ const OrdersView = {
             const total = (order.product?.price ?? 0) * order.amount;
 
             let actions = `
-                <button class="btn-action" onclick="OrdersView.viewOrderDetails(${order.id})" title="Xem chi tiết"><i class="fas fa-eye"></i></button>
+                <button class="btn-icon" onclick="OrdersView.viewOrderDetails(${order.id})" title="Xem chi tiết"><i class="fas fa-eye"></i></button>
             `;
             if (order.status === 'pending') {
                 actions += `
-                    <button class="btn-action" onclick="OrdersView.updateOrderStatus(${order.id},'delivering')" style="color:var(--primary-color);" title="Giao hàng"><i class="fas fa-truck"></i></button>
-                    <button class="btn-action" onclick="OrdersView.cancelOrder(${order.id})" style="color:var(--danger);" title="Hủy đơn"><i class="fas fa-times"></i></button>
+                    <button class="btn-icon" onclick="OrdersView.updateOrderStatus(${order.id},'delivering')" style="color:var(--info);" title="Giao hàng"><i class="fas fa-truck"></i></button>
+                    <button class="btn-icon" onclick="OrdersView.cancelOrder(${order.id})" style="color:var(--danger);" title="Hủy đơn"><i class="fas fa-times"></i></button>
                 `;
             } else if (order.status === 'delivering') {
                 actions += `
-                    <button class="btn-action" onclick="OrdersView.updateOrderStatus(${order.id},'done')" style="color:var(--success);" title="Hoàn thành"><i class="fas fa-check"></i></button>
-                    <button class="btn-action" onclick="OrdersView.cancelOrder(${order.id})" style="color:var(--danger);" title="Hủy đơn"><i class="fas fa-times"></i></button>
+                    <button class="btn-icon" onclick="OrdersView.updateOrderStatus(${order.id},'done')" style="color:var(--success);" title="Hoàn thành"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon" onclick="OrdersView.cancelOrder(${order.id})" style="color:var(--danger);" title="Hủy đơn"><i class="fas fa-times"></i></button>
                 `;
             }
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>#ORD-${order.id}</strong></td>
-                <td>${custName}<br><small style="color:#7f8c8d;">${custPhone}</small></td>
+                <td>${custName}<br><small>${custPhone}</small></td>
                 <td>${prodName} (x${order.amount})</td>
-                <td>${formatCurrency(total)}</td>
+                <td style="font-weight: 500;">${formatCurrency(total)}</td>
                 <td><span class="${STATUS_BADGE[order.status] || 'badge'}">${STATUS_TEXT[order.status] || order.status}</span></td>
                 <td>${actions}</td>
             `;
@@ -223,7 +287,7 @@ const OrdersView = {
         if (!order) return;
 
         if (newStatus === 'delivering') {
-            const prod = this.products.find(p => p.id === order.product?.id);
+            const prod = this.products.find(p => String(p.id) === String(order.product?.id));
             const stock = prod ? (prod.remaining ?? prod.stock ?? 0) : 0;
             if (prod && stock < (order.amount || 1)) {
                 alert(`Không đủ hàng! "${prod.name}" còn ${stock} sản phẩm.`);
@@ -238,8 +302,7 @@ const OrdersView = {
                 amount: order.amount || 1,
                 status: newStatus
             });
-            alert(`Đã cập nhật đơn hàng #${orderId}!`);
-            await this.loadInitialData();
+            await this.loadInitialData(); // Load lại data từ cache/API
         } catch (e) {
             alert('Lỗi cập nhật: ' + (e.response?.data?.message || e.message));
         }
@@ -305,9 +368,9 @@ const OrdersView = {
     },
 
     updateCreateTotal() {
-        const prodId = parseInt(document.getElementById('create-product-select').value);
+        const prodId = document.getElementById('create-product-select').value;
         const qty = parseInt(document.getElementById('create-amount-input').value);
-        const prod = this.products.find(p => p.id === prodId);
+        const prod = this.products.find(p => String(p.id) === String(prodId));
 
         document.getElementById('create-total-preview').textContent =
             (prod && !isNaN(qty) && qty > 0) ? formatCurrency(prod.price * qty) : '0đ';
@@ -315,16 +378,16 @@ const OrdersView = {
 
     async handleCreateOrder(e) {
         e.preventDefault();
-        const custId = parseInt(document.getElementById('create-customer-select').value);
-        const prodId = parseInt(document.getElementById('create-product-select').value);
+        const custId = document.getElementById('create-customer-select').value;
+        const prodId = document.getElementById('create-product-select').value;
         const amount = parseInt(document.getElementById('create-amount-input').value);
 
-        if (isNaN(custId) || isNaN(prodId) || isNaN(amount) || amount <= 0) {
+        if (!custId || !prodId || isNaN(amount) || amount <= 0) {
             alert('Vui lòng điền đầy đủ thông tin hợp lệ');
             return;
         }
 
-        const prod = this.products.find(p => p.id === prodId);
+        const prod = this.products.find(p => String(p.id) === String(prodId));
         const stock = prod ? (prod.remaining ?? prod.stock ?? 0) : 0;
         if (prod && stock < amount) {
             alert(`Không đủ hàng! "${prod.name}" còn ${stock} sản phẩm.`);
@@ -332,10 +395,17 @@ const OrdersView = {
         }
 
         try {
-            await orderService.create({ productId: prodId, customerId: custId, amount, status: 'pending' });
+            const btnSubmit = e.target.querySelector('button[type="submit"]');
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+
+            await orderService.create({ productId: Number(prodId), customerId: Number(custId), amount, status: 'pending' });
+
             this.closeCreateModal();
-            alert('Tạo đơn hàng thành công!');
-            await this.loadInitialData();
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i class="fas fa-save"></i> Lưu đơn hàng';
+
+            await this.loadInitialData(); // Load lại data từ cache bị xóa sau khi create
         } catch (err) {
             alert('Không thể tạo đơn hàng: ' + (err.response?.data?.message || err.message));
         }

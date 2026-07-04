@@ -2,7 +2,7 @@
 import orderService from '../services/orderService.js';
 import productService from '../services/productService.js';
 import customerService from '../services/customerService.js';
-import { formatCurrency } from '../utils/helpers.js';
+import { formatCurrency, normalizeDate } from '../utils/helpers.js';
 
 const DashboardView = {
     render() {
@@ -38,13 +38,14 @@ const DashboardView = {
                                 <th>Mã đơn</th>
                                 <th>Khách hàng</th>
                                 <th>Sản phẩm</th>
+                                <th>Ngày đặt hàng</th>
                                 <th>Trạng thái</th>
                                 <th>Tổng tiền</th>
                             </tr>
                         </thead>
                         <tbody id="dashboardTbody">
                             <tr>
-                                <td colspan="5" style="text-align:center; padding:30px; color:#999;">
+                                <td colspan="6" style="text-align:center; padding:30px; color:#999;">
                                     <i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> Đang tải dữ liệu...
                                 </td>
                             </tr>
@@ -57,7 +58,7 @@ const DashboardView = {
 
     async init() {
         try {
-            const [orders, , products] = await Promise.all([
+            const [orders, customers, products] = await Promise.all([
                 orderService.getAll(),
                 customerService.getAll(),
                 productService.getAll(),
@@ -103,7 +104,7 @@ const DashboardView = {
         tbody.innerHTML = '';
 
         if (recent.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:#999;">Chưa có đơn hàng nào</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#999;">Chưa có đơn hàng nào</td></tr>`;
             return;
         }
 
@@ -112,6 +113,7 @@ const DashboardView = {
             const prodName  = order.product?.name  ?? 'N/A';
             const prodPrice = order.product?.price ?? 0;
             const total     = prodPrice * (order.amount || 1);
+            const dateStr   = order.date ? new Date(normalizeDate(order.date)).toLocaleDateString('vi-VN') : '—';
             const sText     = STATUS_TEXT[order.status]  || order.status;
 
             const tr = document.createElement('tr');
@@ -119,6 +121,7 @@ const DashboardView = {
                 <td><strong>#ORD-${order.id}</strong></td>
                 <td>${custName}</td>
                 <td style="color:#555;">${prodName} ×${order.amount || 1}</td>
+                <td>${dateStr}</td>
                 <td><span class="status">${sText}</span></td>
                 <td><strong>${formatCurrency(total)}</strong></td>
             `;

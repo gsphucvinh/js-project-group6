@@ -321,55 +321,127 @@ small { color: var(--text-muted); display: block; margin-top: 4px; font-size: 0.
 .danger { color: var(--danger); font-weight: 600; }
 
 /* ==========================================================================
-   11. LOGIN PAGE COMPONENT
+   11. LOGIN PAGE COMPONENT (Cập nhật căn giữa tuyệt đối)
    ========================================================================== */
 body.is-logged-out {
-    background-color: var(--bg-color); display: flex; justify-content: center; align-items: center;
-    height: 100vh; width: 100vw; overflow: hidden;
+    background-color: var(--bg-color);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
 }
 
-body.is-logged-out .main-content { padding: 0; display: flex; align-items: center; justify-content: center; }
+/* Ép tất cả các tầng container trung gian truyền trục Flexbox để căn giữa phần tử con bên trong */
+body.is-logged-out .container,
+body.is-logged-out .app-wrapper,
+body.is-logged-out .main-content {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100vh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+}
 
 .login-container, .login-card {
-    width: 100%; max-width: 420px; background: var(--white); padding: 40px;
-    border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    width: 100%;
+    max-width: 420px;
+    background: var(--white);
+    padding: 40px;
+    border-radius: 16px; /* Bo góc mượt mà đồng bộ hệ thống */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     animation: loginFadeIn 0.3s ease-out;
+    margin: auto; /* Trợ lực căn giữa tự động */
+    position: relative;
+    z-index: 10;
 }
 
 @keyframes loginFadeIn {
-    from { transform: translateY(8px); opacity: 0; }
+    from { transform: translateY(12px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
 
 .login-header, .login-container h2 {
-    text-align: center; margin-bottom: 30px; font-size: 26px; font-weight: 700; color: var(--dark-color);
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--dark-color);
+    letter-spacing: -0.5px;
 }
 
-.login-container form { display: flex; flex-direction: column; gap: 20px; }
-.login-container form div { display: flex; flex-direction: column; gap: 8px; }
-.login-container form label { font-size: 14px; font-weight: 600; color: var(--dark-color); }
+.login-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.login-container form div {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.login-container form label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark-color);
+}
 
 .login-container form input {
-    width: 100%; padding: 12px 16px; border: 1px solid var(--border);
-    border-radius: var(--radius-md); outline: none; transition: 0.3s ease;
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: 0.3s ease;
+    background-color: var(--white);
+    color: var(--dark-color);
 }
 
-.login-container form input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15); }
+.login-container form input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
 
 .login-container button[type="submit"] {
-    width: 100%; padding: 14px; border: none; border-radius: var(--radius-md);
-    background: var(--primary-color); color: var(--white); font-size: 16px;
-    font-weight: 600; cursor: pointer; transition: 0.3s ease; margin-top: 10px;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--primary-color);
+    color: var(--white);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+    margin-top: 10px;
 }
 
-.login-container button[type="submit"]:hover { background: var(--primary-hover); }
+.login-container button[type="submit"]:hover {
+    background-color: var(--primary-hover);
+}
 
 #login-error, .login-error {
-    min-height: 20px; margin-top: 16px; color: var(--danger); font-size: 14px; text-align: center; font-weight: 500; transition: 0.25s ease;
+    min-height: 20px;
+    margin-top: 16px;
+    color: #dc2626;
+    font-size: 14px;
+    text-align: center;
+    font-weight: 500;
+    transition: 0.25s ease;
 }
 
 #login-error:not(:empty), .login-error:not(:empty) {
-    background-color: #fef2f2; border: 1px dashed rgba(231, 76, 60, 0.2); padding: 12px; border-radius: var(--radius-md);
+    background-color: #fef2f2;
+    border: 1px dashed rgba(231, 76, 60, 0.2);
+    padding: 12px;
+    border-radius: var(--radius-md);
 }
 
 /* ==========================================================================
@@ -390,3 +462,86 @@ body.is-logged-out .main-content { padding: 0; display: flex; align-items: cente
     .search-bar input { width: 100%; }
 }
 
+/* ==========================================================================
+   14. POPUP MODAL STYLES (Sửa lỗi Form bị chèn vào Table làm vỡ Layout)
+   ========================================================================== */
+.modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(15, 23, 42, 0.6) !important; /* Lớp nền tối mờ phủ toàn màn hình */
+    backdrop-filter: blur(4px); /* Làm mờ hậu cảnh phía sau */
+    display: none; /* Được điều phối ẩn/hiện thành 'flex' bằng JavaScript */
+    align-items: center;
+    justify-content: center;
+    z-index: 99999 !important; /* Chỉ số nổi cao nhất, vượt lên trên cả Sidebar và Table */
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Khung nội dung hộp thoại Popup nổi */
+.modal-content {
+    background-color: var(--white, #ffffff);
+    border-radius: var(--radius-lg, 12px);
+    width: 100%;
+    max-width: 520px; /* Độ rộng tiêu chuẩn cho một Popup Form */
+    padding: 30px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: modalSlideUp 0.25s ease-out; /* Hiệu ứng trượt nhẹ từ dưới lên */
+    box-sizing: border-box;
+}
+
+@keyframes modalSlideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Định hình form group nằm bên trong cấu trúc Hộp thoại nổi */
+.modal-content .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 18px;
+    width: 100%;
+    text-align: left;
+}
+
+.modal-content .form-group label {
+    font-weight: 600;
+    color: var(--dark-color, #2c3e50);
+    font-size: 0.9rem;
+}
+
+.modal-content .form-group input,
+.modal-content .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: var(--radius-md, 8px);
+    outline: none;
+    background-color: var(--white, #ffffff);
+}
+
+/* Căn chỉnh lại cụm nút bấm hành động cuối Form Popup */
+.modal-content .form-actions,
+.modal-content .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border, #e2e8f0);
+    width: 100%;
+}
+
+.modal-content .btn-cancel {
+    background: #ecf0f1;
+    color: #2c3e50;
+}
+
+.modal-content .btn-save {
+    background: var(--primary-color, #3498db);
+    color: white;
+}
