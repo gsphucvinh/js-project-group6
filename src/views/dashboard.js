@@ -1,7 +1,6 @@
 // src/views/dashboard.js
 import orderService from '../services/orderService.js';
 import productService from '../services/productService.js';
-import customerService from '../services/customerService.js';
 import { formatCurrency, normalizeDate } from '../utils/helpers.js';
 
 const DashboardView = {
@@ -45,7 +44,7 @@ const DashboardView = {
                         </thead>
                         <tbody id="dashboardTbody">
                             <tr>
-                                <td colspan="6" style="text-align:center; padding:30px; color:#999;">
+                                <td colspan="6" style="text-align:center; padding:40px; color:var(--text-muted);">
                                     <i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> Đang tải dữ liệu...
                                 </td>
                             </tr>
@@ -58,10 +57,17 @@ const DashboardView = {
 
     async init() {
         try {
-            const [orders, customers, products] = await Promise.all([
-                orderService.getAll(),
-                customerService.getAll(),
-                productService.getAll(),
+            // TỐI ƯU LUỒNG: Bỏ API Customers dư thừa. Gắn catch() độc lập cho từng Promise
+            // Nếu API nào sập, nó tự trả về mảng rỗng [] để các thành phần khác vẫn render bình thường
+            const [orders, products] = await Promise.all([
+                orderService.getAll().catch(err => {
+                    console.warn("Cảnh báo: Không thể tải Orders", err);
+                    return [];
+                }),
+                productService.getAll().catch(err => {
+                    console.warn("Cảnh báo: Không thể tải Products", err);
+                    return [];
+                })
             ]);
 
             if (document.getElementById('dashboard-stats')) {
@@ -69,7 +75,7 @@ const DashboardView = {
                 this._renderTable(orders);
             }
         } catch (err) {
-            console.error('Lỗi khi tải dữ liệu dashboard:', err);
+            console.error('Lỗi nghiêm trọng khi khởi tạo dashboard:', err);
             this._renderError();
         }
     },
@@ -104,13 +110,13 @@ const DashboardView = {
         tbody.innerHTML = '';
 
         if (recent.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#999;">Chưa có đơn hàng nào</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Chưa có đơn hàng nào</td></tr>`;
             return;
         }
 
         recent.forEach(order => {
-            const custName  = order.customer?.name ?? 'N/A';
-            const prodName  = order.product?.name  ?? 'N/A';
+            const custName  = order.customer?.name ?? 'Khách lẻ';
+            const prodName  = order.product?.name  ?? 'Sản phẩm đã xóa';
             const prodPrice = order.product?.price ?? 0;
             const total     = prodPrice * (order.amount || 1);
             const dateStr   = order.date ? new Date(normalizeDate(order.date)).toLocaleDateString('vi-VN') : '—';
@@ -120,10 +126,10 @@ const DashboardView = {
             tr.innerHTML = `
                 <td><strong>#ORD-${order.id}</strong></td>
                 <td>${custName}</td>
-                <td style="color:#555;">${prodName} ×${order.amount || 1}</td>
+                <td style="color:var(--text-muted);">${prodName} ×${order.amount || 1}</td>
                 <td>${dateStr}</td>
-                <td><span class="status">${sText}</span></td>
-                <td><strong>${formatCurrency(total)}</strong></td>
+                <td><span class="status ${order.status}">${sText}</span></td>
+                <td style="font-weight: 500;">${formatCurrency(total)}</td>
             `;
             tbody.appendChild(tr);
         });
@@ -131,9 +137,14 @@ const DashboardView = {
 
     _renderError() {
         document.querySelectorAll('#dashboard-stats .card p').forEach(p => {
-            p.textContent = 'Lỗi';
-            p.style.color = '#e74c3c';
+            p.textContent = 'Lỗi mạng';
+            p.style.color = 'var(--danger)';
+            p.style.fontSize = '1.2rem';
         });
+        const tbody = document.getElementById('dashboardTbody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-state error-text">Không thể kết nối đến máy chủ. Vui lòng thử lại!</td></tr>`;
+        }
     }
 };
 

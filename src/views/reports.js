@@ -81,8 +81,14 @@ const render = () => {
 const init = async () => {
     try {
         const [orders, products] = await Promise.all([
-            orderService.getAll(),
-            productService.getAll()
+            orderService.getAll().catch(err => {
+                console.warn("Báo cáo - Lỗi tải Orders:", err);
+                return [];
+            }),
+            productService.getAll().catch(err => {
+                console.warn("Báo cáo - Lỗi tải Products:", err);
+                return [];
+            })
         ]);
         const revenue = orders.reduce((sum, order) => {
             return sum + order.amount * order.product.price;
