@@ -31,16 +31,9 @@ const OrdersView = {
         return `
             <header>
                 <div class="search-bar">
-                    <input type="text" id="orderSearchInput" placeholder="Tìm mã đơn, tên khách hàng,SĐT...">
+                    <input type="text" id="orderSearchInput" placeholder="Tìm mã đơn, tên khách hàng...">
                 </div>
-                <div style="display:flex;gap:10px;">
-                    <button class="btn-export" style="background:var(--success);" id="btnOpenCreateOrder">
-                        <i class="fas fa-plus"></i> Tạo đơn hàng
-                    </button>
-                    <button class="btn-export" id="btnExportExcel">
-                        <i class="fas fa-download"></i> Xuất Excel
-                    </button>
-                </div>
+                <button class="btn-export"><i class="fas fa-download"></i> Xuất Excel</button>
             </header>
 
             <section class="stats">
@@ -58,77 +51,21 @@ const OrdersView = {
                         <button class="tab" data-tab="shipping">Đang giao</button>
                         <button class="tab" data-tab="completed">Đã xong</button>
                     </div>
-                    <div class="date-filter">
-                        <input type="date" id="orderDateFilter" style="padding:5px;border:1px solid #ddd;border-radius:5px;">
+                    <div>
+                        <input type="date" id="orderDateFilter" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px; outline:none;">
                     </div>
                 </div>
                 <div class="table-wrapper">
                     <table>
                         <thead>
-                            <tr>
-                                <th>Mã đơn</th><th>Khách hàng</th><th>Sản phẩm</th>
-                                <th>Tổng tiền</th><th>Trạng thái</th><th>Thao tác</th>
-                            </tr>
+                            <tr><th>Mã đơn</th><th>Khách hàng</th><th>Sản phẩm</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thao tác</th></tr>
                         </thead>
                         <tbody id="orderTableBody">
-                            <tr><td colspan="6" style="text-align:center;padding:30px;color:#999;">
-                                <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu đơn hàng...
-                            </td></tr>
+                            <tr><td colspan="6" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </section>
-
-            <!-- Details Modal -->
-            <div id="detailsModal" class="modal">
-                <div class="modal-content">
-                    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding-bottom:15px;margin-bottom:20px;">
-                        <h3 style="margin:0;">Chi tiết đơn hàng <span id="detail-order-id"></span></h3>
-                        <button id="btnCloseDetails" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7f8c8d;">&times;</button>
-                    </div>
-                    <div style="line-height:1.7;font-size:0.95rem;margin-bottom:20px;">
-                        <p><strong>Khách hàng:</strong> <span id="detail-customer-name"></span></p>
-                        <p><strong>Số điện thoại:</strong> <span id="detail-customer-phone"></span></p>
-                        <p><strong>Email:</strong> <span id="detail-customer-email"></span></p>
-                        <p style="margin-top:10px;border-top:1px dashed #eee;padding-top:10px;">
-                            <strong>Sản phẩm:</strong> <span id="detail-product-name"></span></p>
-                        <p><strong>Số lượng:</strong> <span id="detail-product-qty"></span></p>
-                        <p><strong>Ngày tạo:</strong> <span id="detail-order-date"></span></p>
-                        <p><strong>Trạng thái:</strong> <span id="detail-order-status"></span></p>
-                        <h4 style="margin-top:20px;border-top:1px solid #eee;padding-top:15px;text-align:right;">
-                            Tổng tiền: <span id="detail-total-amount" style="color:var(--danger);font-size:1.2rem;"></span>
-                        </h4>
-                    </div>
-                    <div style="display:flex;justify-content:flex-end;gap:10px;">
-                        <button class="btn btn-cancel" id="btnCloseDetailsBtn">Đóng</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Create Modal -->
-            <div id="createOrderModal" class="modal">
-                <div class="modal-content">
-                    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding-bottom:15px;margin-bottom:20px;">
-                        <h3 style="margin:0;">Tạo đơn hàng mới</h3>
-                        <button id="btnCloseCreateOrder" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7f8c8d;">&times;</button>
-                    </div>
-                    <form id="createOrderForm">
-                        <div class="form-group"><label>Khách hàng</label>
-                            <select id="create-customer-select" required></select></div>
-                        <div class="form-group"><label>Sản phẩm</label>
-                            <select id="create-product-select" required></select></div>
-                        <div class="form-group"><label>Số lượng</label>
-                            <input type="number" id="create-amount-input" min="1" value="1" required></div>
-                        <div style="text-align:right;font-size:1.1rem;font-weight:bold;margin-bottom:20px;">
-                            Tổng tiền tạm tính: <span id="create-total-preview" style="color:var(--danger);">0đ</span>
-                        </div>
-                        <div class="modal-buttons">
-                            <button type="button" class="btn btn-cancel" id="btnCancelCreateOrder">Hủy</button>
-                            <button type="submit" class="btn btn-save">Lưu đơn hàng</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
         `;
     },
 

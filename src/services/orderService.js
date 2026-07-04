@@ -1,22 +1,24 @@
-import { getAllOrders, createOrder, updateOrder } from '../api/order-api.js';
+import api from "./api.js";
 
 let cachedOrders = null;
 
 const orderService = {
-    getAll: async (forceReload = false) => {
+    async getAll(forceReload = false) {
         if (cachedOrders && !forceReload) return cachedOrders;
-        cachedOrders = await getAllOrders();
+
+        const { data } = await api.get("/orders");
+        cachedOrders = Array.isArray(data) ? data : (data.data || []);
         return cachedOrders;
     },
-    create: async (data) => {
-        const res = await createOrder(data);
+    async create(payload) {
+        const res = await api.post("/orders", payload);
         cachedOrders = null; // Xóa cache
-        return res;
+        return res.data;
     },
-    update: async (id, data) => {
-        const res = await updateOrder(id, data);
+    async update(id, data) {
+        const res = await api.put(`/orders/${id}`, data);
         cachedOrders = null; // Xóa cache
-        return res;
+        return res.data;
     }
 };
 

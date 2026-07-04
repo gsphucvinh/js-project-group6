@@ -1,6 +1,8 @@
 import {getOrder} from "../services/reportService.js";
 import Chart from "chart.js/auto";
 import productService from "../services/productService.js";
+import orderService from "../services/orderService.js";
+
 const render = () => {
     return `
      <header>
@@ -78,7 +80,7 @@ const render = () => {
 
 const init = async () => {
     try {
-        const orders = await getOrder();
+        const orders = await orderService.getAll();
         const products = await productService.getAll();
         const revenue = orders.reduce((sum, order) => {
             return sum + order.amount * order.product.price;

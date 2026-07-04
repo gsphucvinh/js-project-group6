@@ -33,18 +33,14 @@ const renderAdminLayout = () => {
                         <li data-path="/reports"><a href="/reports" data-navigo><i class="fas fa-chart-line"></i> Báo cáo</a></li>
                     </ul>
                 </div>
-                <div class="sidebar-footer">
+                <div>
                     <button id="logout-btn" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
                 </div>
             </aside>
             <main id="main-content" class="main-content"></main>
         `;
-
         document.getElementById("logout-btn").addEventListener("click", () => {
-            if (confirm("Bạn có chắc chắn muốn đăng xuất?")) {
-                logout();
-                router.navigate("/login");
-            }
+            if (confirm("Bạn có chắc chắn muốn đăng xuất?")) { logout(); router.navigate("/login"); }
         });
     }
 };
@@ -70,28 +66,57 @@ const updateSidebarActiveState = (activePath) => {
     });
 };
 
-// 2. Bổ sung tham số activePath vào hàm loadAppPage để gán quyền điều khiển cho Router
+// Tìm đến hàm loadAppPage trong src/main.js và cập nhật đoạn đầu tiên:
+
+import { refresh } from "./services/refreshService.js"; // Bổ sung dòng import này ở đầu file main.js nếu chưa có
+import { getAccessToken, getRefreshToken, clearToken, saveToken } from "./utils/tokenStorage.js";
+
 const loadAppPage = async (pageModule, requiresAuth = true, data = null, activePath = null) => {
-    if (requiresAuth && !isLoginIn()) {
+    let token = getAccessToken();
+    const rToken = getRefreshToken();
+
+    // TÌNH HUỐNG NÂNG CAO: Access Token hết hạn/bị xoá do F5 trang nhưng Refresh Token vẫn còn hiệu lực
+    if (requiresAuth && !token && rToken) {
+        try {
+            // Chạy ngầm xin cấp lại cặp token mới trước khi xác định quyền vào trang
+            const refreshData = await refresh(rToken);
+            const newAccessToken = refreshData?.accessToken || refreshData?.token || refreshData?.data?.accessToken;
+            const newRefreshToken = refreshData?.refreshToken || refreshData?.data?.refreshToken || rToken;
+
+            if (newAccessToken) {
+                saveToken({ accessToken: newAccessToken, refreshToken: newRefreshToken });
+                token = newAccessToken; // Cập nhật lại biến token hiện hành để vượt qua vòng kiểm tra bên dưới
+            }
+        } catch (err) {
+            console.error("Silent refresh thất bại khi tải lại trang:", err);
+            clearToken(); // Refresh token hỏng -> Xoá bộ nhớ và ép về Login
+            router.navigate("/login");
+            return;
+        }
+    }
+
+    // Kiểm tra phân quyền điều hướng (Giữ nguyên logic bảo mật của bạn)
+    if (requiresAuth && !token) {
         router.navigate("/login");
         return;
     }
 
-    if (!requiresAuth && isLoginIn()) {
+    if (!requiresAuth && token) {
         router.navigate("/dashboard");
         return;
     }
 
+    // Tiến hành vẽ layout Admin nếu mọi điều kiện hợp lệ
     if (requiresAuth) {
         document.body.classList.remove("is-logged-out");
         renderAdminLayout();
-        updateSidebarActiveState(activePath); // Thực thi đồng bộ trạng thái Active theo Router chỉ định
+        updateSidebarActiveState(activePath);
         const mainContent = document.getElementById("main-content");
 
         mainContent.innerHTML = pageModule.render(data);
         if (pageModule.init) await pageModule.init(data);
     } else {
-        document.body.classList.add("is-logged-out")
+        document.body.classList.add("is-logged-out");
         appContainer.innerHTML = pageModule.render();
         if (pageModule.init) await pageModule.init();
     }

@@ -1,5 +1,6 @@
 import { customerApi } from "../api/./customer-api.js";
 import { clearToken as clearAuthSession } from "../utils/tokenStorage.js";
+import customerService from "../services/customerService.js";
 
 // PAGE STATE
 const customerState = {
@@ -140,7 +141,9 @@ async function loadCustomers() {
     try {
         customerState.loading = true;
         customerState.error = "";
-        const response = await customerApi.getAll();
+
+        // Gọi qua Service có tích hợp bộ nhớ đệm
+        const response = await customerService.getAll();
         customerState.customers = normalizeCustomerListResponse(response);
 
         renderCustomerStats();
@@ -187,13 +190,19 @@ function renderCustomerRows() {
         return;
     }
 
+    // Cập nhật thẻ <tr> trong hàm renderCustomerRows() của customers.js
     tableBody.innerHTML = customers.map(function (customer) {
         const tier = getCustomerTier(customer.totalSpent);
+        // Random màu nhẹ cho avatar
+        const bgColors = ['#ebf5fb', '#fdf2e9', '#f4f6f7', '#e8f5e9'];
+        const textColors = ['#3498db', '#e67e22', '#7f8c8d', '#27ae60'];
+        const rand = Math.floor(Math.random() * 4);
+
         return `
             <tr>
                 <td>
-                    <div class="cust-info" style="display: flex; align-items: center; gap: 10px;">
-                        <div class="avatar" style="background: #e2e8f0; padding: 8px 12px; border-radius: 50%; font-weight: bold; color: #475569;">
+                    <div class="cust-info">
+                        <div class="avatar" style="background: ${bgColors[rand]}; color: ${textColors[rand]};">
                             ${escapeHTML(getInitials(customer.name))}
                         </div>
                         <div>
@@ -204,20 +213,16 @@ function renderCustomerRows() {
                 </td>
                 <td>
                     ${escapeHTML(customer.email)}<br>
-                    <small style="color: #64748b;">${escapeHTML(customer.phone)}</small>
+                    <small>${escapeHTML(customer.phone)}</small>
                 </td>
-                <td>
-                    <span class="tier ${tier.className}" style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
-                        ${tier.label}
-                    </span>
-                </td>
+                <td><span class="tier ${tier.className}">${tier.label}</span></td>
                 <td>${Number(customer.orders)}</td>
-                <td style="font-weight: 500;">${formatCurrency(customer.totalSpent)}</td>
+                <td><strong>${formatCurrency(customer.totalSpent)}</strong></td>
                 <td>
-                    <a href="/customers/edit/${encodeURIComponent(customer.id)}" class="btn-action edit" title="Sửa" data-navigo style="margin-right: 8px; color: #3b82f6;">
+                    <a href="/customers/edit/${encodeURIComponent(customer.id)}" class="btn-action" title="Sửa" data-navigo>
                         <i class="fas fa-user-edit"></i>
                     </a>
-                    <button type="button" class="btn-action delete" title="Xóa" data-delete-id="${escapeHTML(customer.id)}" style="color: #ef4444; background: none; border: none; cursor: pointer;">
+                    <button class="btn-action" data-delete-id="${escapeHTML(customer.id)}" title="Xóa">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
